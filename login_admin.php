@@ -6,28 +6,27 @@ if (isset($_POST['login'])) {
     $email = $_POST['email'];
     $password = $_POST['password'];
 
-    // Query hanya akun mahasiswa
-    $stmt = $conn->prepare("SELECT * FROM users WHERE email = ? AND role = 'mahasiswa'");
+    // Query hanya akun admin
+    $stmt = $conn->prepare("SELECT * FROM users WHERE email = ? AND role = 'admin'");
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
 
-    // Cek apakah akun mahasiswa ditemukan
+    // Cek apakah akun admin ditemukan
     if ($result->num_rows === 1) {
         $row = $result->fetch_assoc();
 
         // Verifikasi password
         if (password_verify($password, $row['password'])) {
 
-            // Simpan data ke session
+            // Simpan session admin
             $_SESSION['user_id'] = $row['user_id'];
             $_SESSION['nama'] = $row['nama'];
             $_SESSION['email'] = $row['email'];
-            $_SESSION['jurusan'] = $row['jurusan'];
-            $_SESSION['role'] = "mahasiswa";
+            $_SESSION['role'] = "admin";
 
-            // Arahkan ke dashboard mahasiswa
-            header("Location: dashboard_mahasiswa.php");
+            // Arahkan ke dashboard admin
+            header("Location: admin_dashboard.php");
             exit();
 
         } else {
@@ -35,7 +34,7 @@ if (isset($_POST['login'])) {
         }
 
     } else {
-        echo "<script>alert('Akun mahasiswa tidak ditemukan!');</script>";
+        echo "<script>alert('Akun admin tidak ditemukan!');</script>";
     }
 }
 ?>
@@ -44,11 +43,11 @@ if (isset($_POST['login'])) {
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Login Mahasiswa - SICOPY</title>
+    <title>Login Admin - SICOPY</title>
     <style>
         body {
             font-family: 'Poppins', sans-serif;
-            background: #EEF2FF;
+            background: #FFECEC;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -64,7 +63,7 @@ if (isset($_POST['login'])) {
         }
         h2 {
             text-align: center;
-            color: #4F46E5;
+            color: #DC3545;
             margin-bottom: 20px;
         }
         input, button {
@@ -76,20 +75,20 @@ if (isset($_POST['login'])) {
             font-size: 14px;
         }
         button {
-            background: #4F46E5;
+            background: #DC3545;
             color: white;
             border: none;
             cursor: pointer;
         }
         button:hover {
-            background: #6366F1;
+            background: #E4606D;
         }
         p {
             text-align: center;
             margin-top: 12px;
         }
         a {
-            color: #4F46E5;
+            color: #DC3545;
             text-decoration: none;
         }
     </style>
@@ -97,12 +96,11 @@ if (isset($_POST['login'])) {
 <body>
 
 <div class="login-box">
-    <h2>Login Mahasiswa</h2>
+    <h2>Login Admin</h2>
     <form method="post">
-        <input type="email" name="email" placeholder="Email Mahasiswa" required>
+        <input type="email" name="email" placeholder="Email Admin" required>
         <input type="password" name="password" placeholder="Password" required>
         <button type="submit" name="login">Masuk</button>
-        <p>Belum punya akun? <a href="register.php">Daftar</a></p>
     </form>
 </div>
 

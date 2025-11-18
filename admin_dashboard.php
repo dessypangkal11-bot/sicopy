@@ -1,201 +1,158 @@
 <?php
 include 'koneksi.php';
-session_start();
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'admin') {
-    header("Location: login.php");
-    exit();
-}
-
-// Ambil data untuk dashboard
-$total_pengguna = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS total FROM users WHERE role='mahasiswa'"))['total'];
-$total_toko = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS total FROM toko"))['total'];
-$total_transaksi = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS total FROM transaksi"))['total'];
-$total_pendapatan = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(total_transaksi) AS total FROM laporan"))['total'] ?? 0;
+// Ambil semua data toko
+$query = mysqli_query($conn, "SELECT * FROM toko ORDER BY toko_id DESC");
 ?>
 
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Admin - SICOPY</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            font-family: 'Poppins', sans-serif;
-        }
+<meta charset="UTF-8">
+<title>Manajemen Toko</title>
 
-        body {
-            margin: 0;
-            display: flex;
-            background: #f3e5f5;
-            color: #333;
-        }
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background: #f4f4f4;
+    }
 
-        /* Sidebar */
-        .sidebar {
-            width: 240px;
-            background: linear-gradient(135deg, #7e57c2, #26c6da);
-            color: white;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            position: fixed;
-        }
+    h2 {
+        text-align: center;
+        margin-bottom: 20px;
+    }
 
-        .sidebar h2 {
-            text-align: center;
-            padding: 20px;
-            margin: 0;
-            background: rgba(255,255,255,0.1);
-            letter-spacing: 1px;
-        }
+    /* Tombol Logout */
+    .logout-btn {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: #dc3545;
+        padding: 10px 16px;
+        border-radius: 6px;
+        color: white;
+        text-decoration: none;
+        font-weight: bold;
+    }
 
-        .sidebar a {
-            display: block;
-            color: white;
-            padding: 15px 20px;
-            text-decoration: none;
-            transition: 0.3s;
-        }
+    a.btn-add {
+        display: inline-block;
+        margin-bottom: 15px;
+        background: #0d6efd;
+        color: white;
+        padding: 10px 16px;
+        border-radius: 6px;
+        text-decoration: none;
+    }
 
-        .sidebar a:hover {
-            background: rgba(255,255,255,0.2);
-            padding-left: 25px;
-        }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+    }
 
-        .sidebar-footer {
-            padding: 15px;
-            text-align: center;
-            background: rgba(255,255,255,0.1);
-        }
+    th, td {
+        padding: 10px;
+        border: 1px solid #ccc;
+        text-align: left;
+        vertical-align: top;
+    }
 
-        /* Main */
-        .main-content {
-            margin-left: 240px;
-            padding: 30px;
-            flex: 1;
-        }
+    th {
+        background: #eee;
+    }
 
-        .topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+    img.thumbnail {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 6px;
+        border: 1px solid #ddd;
+    }
 
-        .topbar h1 {
-            font-size: 22px;
-            color: #4a148c;
-        }
+    /* Tombol edit/hapus/kelola */
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
 
-        .topbar a {
-            background: #26c6da;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 10px;
-            text-decoration: none;
-            transition: 0.3s;
-        }
+    .btn {
+        padding: 6px 12px;
+        border-radius: 6px;
+        text-decoration: none;
+        color: white;
+        font-size: 14px;
+        text-align: center;
+        display: inline-block;
+    }
 
-        .topbar a:hover {
-            background: #0097a7;
-        }
+    .btn-edit {
+        background: #ffc107;
+        color: black;
+    }
 
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 20px;
-            margin-top: 30px;
-        }
+    .btn-hapus {
+        background: #dc3545;
+    }
 
-        .card {
-            background: white;
-            border-radius: 16px;
-            padding: 25px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-            text-align: center;
-            transition: 0.3s;
-        }
+    .btn-pesanan {
+        background: #198754;
+    }
 
-        .card:hover {
-            transform: translateY(-5px);
-        }
+</style>
 
-        .card h3 {
-            margin: 0;
-            color: #7e57c2;
-        }
-
-        .card p {
-            font-size: 24px;
-            font-weight: 600;
-            color: #4a148c;
-        }
-
-        footer {
-            margin-top: 40px;
-            text-align: center;
-            color: #888;
-            font-size: 13px;
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                display: none;
-            }
-            .main-content {
-                margin-left: 0;
-            }
-        }
-    </style>
 </head>
 <body>
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div>
-            <h2>SICOPY Admin</h2>
-            <a href="dashboard_admin.php">🏠 Dashboard</a>
-            <a href="kelola_toko.php">🏪 Kelola Toko</a>
-            <a href="kelola_pengguna.php">👥 Kelola Pengguna</a>
-            <a href="kelola_transaksi.php">💰 Transaksi</a>
-            <a href="laporan_admin.php">📊 Laporan</a>
-        </div>
-        <div class="sidebar-footer">
-            <a href="logout.php" style="color:#fff;">🚪 Logout</a>
-        </div>
-    </div>
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <div class="topbar">
-            <h1>Selamat Datang, <?php echo $_SESSION['nama']; ?> 👋</h1>
-            <a href="logout.php">Logout</a>
-        </div>
+<!-- Tombol Logout -->
+<a href="logout_admin.php" class="logout-btn">Logout</a>
 
-        <div class="cards">
-            <div class="card">
-                <h3>Total Pengguna</h3>
-                <p><?php echo $total_pengguna; ?></p>
-            </div>
-            <div class="card">
-                <h3>Total Toko</h3>
-                <p><?php echo $total_toko; ?></p>
-            </div>
-            <div class="card">
-                <h3>Total Transaksi</h3>
-                <p><?php echo $total_transaksi; ?></p>
-            </div>
-            <div class="card">
-                <h3>Total Pendapatan</h3>
-                <p>Rp <?php echo number_format($total_pendapatan, 0, ',', '.'); ?></p>
-            </div>
-        </div>
+<h2>Daftar Toko</h2>
 
-        <footer>
-            © 2025 SICOPY | Sistem Informasi Copy Center Mahasiswa
-        </footer>
-    </div>
+<a href="tambah_toko.php" class="btn-add">+ Tambah Toko</a>
+
+<table>
+    <tr>
+        <th>ID</th>
+        <th>Nama Toko</th>
+        <th>Layanan</th>
+        <th>Latitude</th>
+        <th>Longitude</th>
+        <th>Gambar</th>
+        <th>Aksi</th>
+    </tr>
+
+    <?php while ($toko = mysqli_fetch_assoc($query)) { ?>
+        <tr>
+            <td><?= $toko['toko_id']; ?></td>
+            <td><?= $toko['nama_toko']; ?></td>
+            <td><?= $toko['layanan']; ?></td>
+            <td><?= $toko['lokasi_lat']; ?></td>
+            <td><?= $toko['lokasi_lng']; ?></td>
+
+            <td>
+                <?php if (!empty($toko['gambar'])) { ?>
+                    <img src="uploads/<?= $toko['gambar']; ?>" class="thumbnail">
+                <?php } else { ?>
+                    <span style="color: #888;">Tidak ada</span>
+                <?php } ?>
+            </td>
+
+            <td>
+                <div class="action-buttons">
+                    <a href="edit_toko.php?id=<?= $toko['toko_id']; ?>" class="btn btn-edit">Edit</a>
+                    <a href="hapus_toko.php?id=<?= $toko['toko_id']; ?>"
+                       class="btn btn-hapus"
+                       onclick="return confirm('Yakin ingin menghapus toko ini?');">Hapus</a>
+                    <a href="pesanan_toko.php?id_toko=<?= $toko['toko_id']; ?>" class="btn btn-pesanan">Kelola Pesanan</a>
+                </div>
+            </td>
+        </tr>
+    <?php } ?>
+
+</table>
+
 </body>
 </html>
